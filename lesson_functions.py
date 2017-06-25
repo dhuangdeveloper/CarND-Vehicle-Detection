@@ -37,7 +37,7 @@ def get_hog_features(img, orient, pix_per_cell, cell_per_block,
                                   pixels_per_cell=(pix_per_cell, pix_per_cell),
                                   cells_per_block=(cell_per_block, cell_per_block), 
                                   transform_sqrt=False, 
-                                  block_norm = 'L2-Hys',
+                                  #block_norm = 'L2-Hys',
                                   visualise=vis, feature_vector=feature_vec)
         return features, hog_image
     # Otherwise call with one output
@@ -46,7 +46,7 @@ def get_hog_features(img, orient, pix_per_cell, cell_per_block,
                        pixels_per_cell=(pix_per_cell, pix_per_cell),
                        cells_per_block=(cell_per_block, cell_per_block), 
                        transform_sqrt=False, 
-                       block_norm = 'L2-Hys',
+                       #block_norm = 'L2-Hys',
                        visualise=vis, feature_vector=feature_vec)
         return features
 
@@ -261,9 +261,10 @@ def add_heat(heatmap, bbox_list):
     # Return updated heatmap
     return heatmap
 
+
 def apply_threshold(heatmap, threshold):
     # Zero out pixels below the threshold
-    heatmap[heatmap <= threshold] = 0
+    heatmap[heatmap < threshold] = 0
     # Return thresholded map
     return heatmap
 
