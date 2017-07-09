@@ -33,10 +33,7 @@ The goals / steps of this project are the following:
 [image3fp2n2]: ./output_images/negative_image/fp_2_0002.png
 [image4a]: ./output_images/test_video_output/joint_heatmap_tv_0_36.png
 [image4b]: ./output_images/test_video_output/bbox_tv_0_36.png 
-[image5]: ./examples/bboxes_and_heat.png
-[image6]: ./examples/labels_map.png
-[image7]: ./examples/output_bboxes.png
-[video1]: ./project_video.mp4
+
 
 ### [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
 
@@ -308,36 +305,40 @@ Here's a [link to my project video result](./output_videos/project_video_marked.
 To compute the final box for each vehicle, I apply the following steps:
 
 1. For each frame, I record the detected windows.
-2. For each frame, I create a per-frame heatmap counting how many windows cover each pixel.
-3. For each frame, I apply a per-frame threshold to the heatmap to obtain a per-frame detection region. 
-4. Across multiple frames specified by the n_frame parameter, I calculate the **cross-frame heatmap** from per-frame detection region: The value of each pixel is the number of detection region covering that pixel. 
-5. I then threshold the cross-frame heatmap with an cross-frame threshold.
-6. Finally, I use scipy.ndimage.measurement.label to identify individual blobs in the thresholded cross-frame heatmap. I then construct the bounding boxes to cover each blob.
+2. For each frame, I create a per-frame heatmap $H$ counting how many windows cover each pixel.
+3. I then update the _accumulative-heatmap_ $H_{accumulative}$ with the new frame using the following formula
+$$H_{accumulative} = \alpha f(H) + (1-\alpha) H_{accmulative}$$ 
+where $f$ is a nonlinear function to downweight high value heat map pixels. In our report, $f$ is chosen to be $f(x)=\sqrt{x}$.
+4. I then threshold the accumulative heatmap with a threshold.
+5. Finally, I use scipy.ndimage.measurement.label to identify individual blobs in the thresholded accumulative heatmap. I then construct the bounding boxes to cover each blob.
 
-These methods are implemented as in the _HotWindowHistory_ object in code cell [17] of "Vehicle_Detection.ipynb". Step 2-4 are implemented in get_joint_heatmap method. Step 5 and 6 are impelmented in get_bbox method. The overall pipeline is implemented in code cell [18].
+These methods are implemented as in the _HotWindowHistory_ object in code cell [17] of "Vehicle_Detection.ipynb". Step 2-3 are implemented in update_hot_window method. Step 4 and 5 are impelmented in get_bbox method. The overall pipeline is implemented in code cell [18].
 
-The two thresholding rule (per-frame thresholding and across-frame thresholding) helps filtering out the false positivies. A larger n_frame threshold would lead to less false positives but might cause the bounding box to lag behind the video. 
+#### Reducing false positives by a low-pass filter, anda 
+To reduce the false positives, I apply two techniques in step 3:
+1. Low-pass filter
+2. Non-linear function $f$ to downweight per-frame high value heat map pixels to reduce the effect of a single frame with a larger number of detected windows, in order to reduce false positives induced by such a frame. 
 
-Below is an example of the pipeline applied to the test video with the following parameters: n_frame=10, per_frame_threshold=3, cross_frame_threshold = 7
 
-##### A. Per -frame heatmap and detected region
-| Image with Detected Windows(Step 1)  | Per Frame Heatmap(Step 2)           | Per Frame Detection Region (Step 3)  |
-|:-----------------------------|:----------------------------|:----------------------------|
-| ![](output_images/test_video_output/hot_window_tv_0_00.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_00.png)  | ![](output_images/test_video_output/detection_region_tv_0_00.png)  |
-| ![](output_images/test_video_output/hot_window_tv_0_04.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_04.png)  | ![](output_images/test_video_output/detection_region_tv_0_04.png)  |
-| ![](output_images/test_video_output/hot_window_tv_0_08.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_08.png)  | ![](output_images/test_video_output/detection_region_tv_0_08.png)  |
-| ![](output_images/test_video_output/hot_window_tv_0_12.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_12.png)  | ![](output_images/test_video_output/detection_region_tv_0_12.png)  |
-| ![](output_images/test_video_output/hot_window_tv_0_16.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_16.png)  | ![](output_images/test_video_output/detection_region_tv_0_16.png)  |
-| ![](output_images/test_video_output/hot_window_tv_0_20.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_20.png)  | ![](output_images/test_video_output/detection_region_tv_0_20.png)  |
-| ![](output_images/test_video_output/hot_window_tv_0_24.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_24.png)  | ![](output_images/test_video_output/detection_region_tv_0_24.png)  |
-| ![](output_images/test_video_output/hot_window_tv_0_28.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_28.png)  | ![](output_images/test_video_output/detection_region_tv_0_28.png)  |
-| ![](output_images/test_video_output/hot_window_tv_0_32.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_32.png)  | ![](output_images/test_video_output/detection_region_tv_0_32.png)  |
-| ![](output_images/test_video_output/hot_window_tv_0_36.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_36.png)  | ![](output_images/test_video_output/detection_region_tv_0_36.png)  |
+Below is an example of the pipeline applied to the test video with the following parameters: $\alpha=0.05$, threshold = 1. 
 
-##### B. Cross-frame heatmap, combined blobs, and bounding boxes
-The cross-frame heatmap from the above frames is displayed below on the left. The boundary boxes (green) and identified blobs (each marked with a unique non-green color) are displayed on the right. 
+| Image with Detected Windows(Step 1)  | Per Frame Heatmap(Step 2)           | Accumulative Heapmap (Step 3)| Combined Blobs and boxes|
+|:-----------------------------|:----------------------------|:----------------------------|:----------------------------|
+| ![](output_images/test_video_output/hot_window_tv_0_00.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_00.png)  | ![](output_images/test_video_output/joint_heatmap_tv_0_00.png)      | ![](output_images/test_video_output/bbox_tv_0_00.png)  |
+| ![](output_images/test_video_output/hot_window_tv_0_04.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_04.png)  | ![](output_images/test_video_output/joint_heatmap_tv_0_04.png)  | ![](output_images/test_video_output/bbox_tv_0_04.png)  |
+| ![](output_images/test_video_output/hot_window_tv_0_08.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_08.png)  | ![](output_images/test_video_output/joint_heatmap_tv_0_08.png)  | ![](output_images/test_video_output/bbox_tv_0_08.png)  |
+| ![](output_images/test_video_output/hot_window_tv_0_12.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_12.png)  | ![](output_images/test_video_output/joint_heatmap_tv_0_12.png)  | ![](output_images/test_video_output/bbox_tv_0_12.png)  |
+| ![](output_images/test_video_output/hot_window_tv_0_16.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_16.png)  | ![](output_images/test_video_output/joint_heatmap_tv_0_16.png)  | ![](output_images/test_video_output/bbox_tv_0_16.png)  |
+| ![](output_images/test_video_output/hot_window_tv_0_20.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_20.png)  | ![](output_images/test_video_output/joint_heatmap_tv_0_20.png)  | ![](output_images/test_video_output/bbox_tv_0_20.png)  |
+| ![](output_images/test_video_output/hot_window_tv_0_24.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_24.png)  | ![](output_images/test_video_output/joint_heatmap_tv_0_24.png)  | ![](output_images/test_video_output/bbox_tv_0_24.png)  |
+| ![](output_images/test_video_output/hot_window_tv_0_28.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_28.png)  | ![](output_images/test_video_output/joint_heatmap_tv_0_28.png)  | ![](output_images/test_video_output/bbox_tv_0_28.png)  |
+| ![](output_images/test_video_output/hot_window_tv_0_32.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_32.png)  | ![](output_images/test_video_output/joint_heatmap_tv_0_32.png)  | ![](output_images/test_video_output/bbox_tv_0_32.png)  |
+| ![](output_images/test_video_output/hot_window_tv_0_36.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_36.png)  | ![](output_images/test_video_output/joint_heatmap_tv_0_36.png)  | ![](output_images/test_video_output/bbox_tv_0_36.png)  |
 
-| cross-frame heatmap | Identified blobs and boundary boxes |
+
+The accumulative heatmap from the above frames is displayed below on the left. The boundary boxes (green) and identified blobs (each marked with a unique non-green color) are displayed on the right. 
+
+| accumulative heatmap | Identified blobs and boundary boxes |
 |:-----------------------------|:----------------------------|
 |![joint heatmap][image4a] |![boundary box][image4b]|
 
