@@ -7,7 +7,7 @@
 The goals / steps of this project are the following:
 
 * Perform a Histogram of Oriented Gradients (HOG) feature extraction on a labeled training set of images and train a classifier Linear SVM classifier
-* Optionally, you can also apply a color transform and append binned color features, as well as histograms of color, to your HOG feature vector.
+* We also apply a color transform and append binned color features, as well as histograms of color, to your HOG feature vector.
 * We train a classifier of which the input is the normalized features and output is vehicle / nonvehicle label.
 * We implement a sliding-window technique and use the trained classifier to search for vehicles in images.
 * Run the pipeline on a video stream (start with the test_video.mp4 and later implement on full project_video.mp4) and create a heat map of recurring detections frame by frame to reject outliers and follow detected vehicles.
@@ -28,9 +28,6 @@ The goals / steps of this project are the following:
 [image3b3]: ./output_images/test_image_detection/classification_after_nim_3.png
 [image3b4]: ./output_images/test_image_detection/classification_after_nim_4.png
 [image3b5]: ./output_images/test_image_detection/classification_after_nim_5.png
-[image3fp2n0]: ./output_images/negative_image/fp_2_0000.png
-[image3fp2n1]: ./output_images/negative_image/fp_2_0001.png
-[image3fp2n2]: ./output_images/negative_image/fp_2_0002.png
 [image4a]: ./output_images/test_video_output/joint_heatmap_tv_0_36.png
 [image4b]: ./output_images/test_video_output/bbox_tv_0_36.png 
 
@@ -50,7 +47,7 @@ The writeup (this document) addresses the rubric points. In addition to the writ
 
 * A support libraries of functions (supporting_functions.py) used in the project. Some of these functions are borrowed from the course with or without modification.
 
-* Output from test images
+* Car detection result for the test images
 * Output from test video
 * Output from Project video
 
@@ -268,17 +265,19 @@ The blue and red boxes are the detected windows where blue is a true positive an
 
 For the set of test images, I manually draw a box for each vehicle (Code cell [11] in "Vehicle_Detection.ipynb"). After applying the first classifier, I label each detected window as false positive or true postive based on whether it overlaps with the manually drawn boxes for vehicles. For each window marked as false positive, I extra the region in the window, resize it to 64 x 64 and save as an nagative image. All the negative image are then used to augment the set of non-vehicle iamges. 
 
-For example, in the image below, the red boxes are the false positives and blue boxes are the true positives. 
+For example, in the image below, the red boxes are the false positives and blue boxes are the true positives.
 ![alt text][image3a2]
 
-The set of false positive images extracted from this test image are displayed below
+The false positive images extracted from this test image are displayed below: 
 
-| false positive image | false positive image | false positive image |
-|:-------------------|:-------------------|:-------------------|
-| ![][image3fp2n0]  | ![][image3fp2n1]  | ![][image3fp2n2]  |
+![](output_images/negative_image/fp_2_0000.png)
 
+After including all false positive images as part of the training set, the new car search result on the test image is:
+![alt text][image3b2]
 
+Below are the set of detected windows before and after hard negative mining for all test images.
 
+###### Comparison of detected windows before and after hard negative mining. 
 | Before Hard Negative Mining  | After Hard Negative Mining  |
 |:-----------------------------|:----------------------------|
 | ![][image3a0]                | ![][image3b0]               |
@@ -322,7 +321,7 @@ To reduce the false positives, I apply two techniques in step 3:
 
 Below is an example of the pipeline applied to the test video with the following parameters: $\alpha=0.05$, threshold = 1. 
 
-| Image with Detected Windows(Step 1)  | Per Frame Heatmap(Step 2)           | Accumulative Heapmap (Step 3)| Combined Blobs and boxes|
+| Image with Detected Windows(Step 1)  | Per Frame Heatmap(Step 2)           | Accumulative Heapmap (Step 3)| Combined Blobs and boxes (Step 4, 5)|
 |:-----------------------------|:----------------------------|:----------------------------|:----------------------------|
 | ![](output_images/test_video_output/hot_window_tv_0_00.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_00.png)  | ![](output_images/test_video_output/joint_heatmap_tv_0_00.png)      | ![](output_images/test_video_output/bbox_tv_0_00.png)  |
 | ![](output_images/test_video_output/hot_window_tv_0_04.png)    | ![](output_images/test_video_output/per_frame_heatmap_tv_0_04.png)  | ![](output_images/test_video_output/joint_heatmap_tv_0_04.png)  | ![](output_images/test_video_output/bbox_tv_0_04.png)  |

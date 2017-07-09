@@ -11,8 +11,8 @@ def obtain_fold_group(group_id,K):
         n_sample_in_group = np.sum(group_id == c_id)
         if c_id ==0:
             test_fold_index[group_id == c_id] = shuffle((np.floor_divide(np.arange(0, n_sample_in_group),
-                                                                         np.ceil(n_sample_in_group/K))).astype(int)
-                                                        ) 
+                                                                         np.ceil(n_sample_in_group/K))).astype(int),
+                                                        random_state=0) 
         else:
             test_fold_index[group_id == c_id] = fold_index_assignment[(np.floor_divide(np.arange(0, n_sample_in_group), np.ceil(n_sample_in_group/K))).astype(int)]
     return test_fold_index 
@@ -285,13 +285,14 @@ def search_cars(img, x_start_stop, y_start_stop, xy_window, xy_overlap,
                 feature_list.append(hog_features)
             test_features = np.concatenate(feature_list).reshape(1, -1)
             test_prediction = clf.predict(test_features)
-
+            test_probability = clf.decision_function(test_features)
             if test_prediction == 1:
                 x_window_start = x_start_stop[0]+np.int(xleft*x_scale)
                 y_window_start = y_start_stop[0]+np.int(ytop*y_scale)
                 on_windows.append(((x_window_start, y_window_start),
-                                   (x_window_start+xy_window[0], y_window_start+xy_window[1])))
-    return on_windows, xyspan_resized                               
+                                   (x_window_start+xy_window[0], y_window_start+xy_window[1]),
+                                   test_probability))
+    return on_windows                               
 
 
 # Define a function to extract features from a single image window
