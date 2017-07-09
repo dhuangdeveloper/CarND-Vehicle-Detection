@@ -304,8 +304,10 @@ To compute the final box for each vehicle, I apply the following steps:
 
 1. For each frame, I record the detected windows.
 2. For each frame, I create a per-frame heatmap $H$ counting how many windows cover each pixel.
-3. I then update the _accumulative-heatmap_ $H_{accumulative}$ with the new frame using the following formula
+3. I then update the _accumulative-heatmap_ $H_{accumulative}$ with the new frame using the following formula:
+
 $$H_{accumulative} = \alpha f(H) + (1-\alpha) H_{accmulative}$$ 
+
 where $f$ is a nonlinear function to downweight high value heat map pixels. In our report, $f$ is chosen to be $f(x)=\sqrt{x}$.
 4. I then threshold the accumulative heatmap with a threshold.
 5. Finally, I use scipy.ndimage.measurement.label to identify individual blobs in the thresholded accumulative heatmap. I then construct the bounding boxes to cover each blob.
